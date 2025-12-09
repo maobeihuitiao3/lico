@@ -3,167 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mixboard Pro - 预设管理版</title>
+    <title>Mixboard Pro - 终极预设版</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Liu+Jian+Mao+Cao&family=Long+Cang&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;700;900&family=Noto+Serif+SC:wght@700&family=ZCOOL+KuaiLe&family=ZCOOL+QingKe+HuangYou&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
 
     <style>
         :root {
+            /* 动态流体极光背景 */
+            --aurora-bg: 
+                radial-gradient(at 0% 0%, hsla(253,16%,90%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(260, 100%, 85%, 1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(200, 100%, 85%, 1) 0, transparent 50%),
+                radial-gradient(at 0% 50%, hsla(300, 100%, 90%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(240, 100%, 85%, 1) 0, transparent 50%);
+
             --glass: rgba(255, 255, 255, 0.75);
             --glass-border: rgba(255, 255, 255, 0.6);
             --primary: #6c5ce7;
+            --primary-grad: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
             --text-main: #2d3436;
             --text-sub: #636e72;
-            --bg-grad: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --shadow-float: 0 10px 40px -10px rgba(0,0,0,0.1);
         }
 
         body { 
             margin: 0; height: 100vh; display: flex; 
-            background: var(--bg-grad); color: var(--text-main); 
-            font-family: "Inter", sans-serif; overflow: hidden; user-select: none;
+            background-color: #ffffff;
+            background-image: var(--aurora-bg);
+            background-size: 200% 200%;
+            animation: auroraMove 15s ease infinite alternate;
+            color: var(--text-main); font-family: "Inter", sans-serif; 
+            overflow: hidden; user-select: none;
         }
 
+        @keyframes auroraMove { 0% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
         * { box-sizing: border-box; outline: none; }
 
         /* 左侧面板 */
         .sidebar {
             width: 380px; background: var(--glass);
-            backdrop-filter: blur(20px); border-right: 1px solid var(--glass-border);
+            backdrop-filter: blur(30px); border-right: 1px solid var(--glass-border);
             display: flex; flex-direction: column; z-index: 100;
-            box-shadow: 10px 0 30px rgba(0,0,0,0.05);
+            box-shadow: 10px 0 30px rgba(0,0,0,0.02);
         }
         .header { padding: 20px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .brand { font-size: 20px; font-weight: 800; color: #2d3436; }
-        .brand span { color: var(--primary); }
+        .brand { font-size: 22px; font-weight: 800; color: #2d3436; }
+        .brand span { color: var(--primary); background: rgba(108, 92, 231, 0.1); padding: 2px 6px; border-radius: 6px; font-size: 10px; vertical-align: middle; margin-left: 5px; }
 
         .content { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
         .content::-webkit-scrollbar { width: 0; }
 
-        /* 卡片 */
-        .card { background: rgba(255,255,255,0.6); border: 1px solid #fff; border-radius: 12px; padding: 16px; transition: 0.2s; }
-        .card.active { background: #fff; border-color: var(--primary); box-shadow: 0 8px 24px rgba(108, 92, 231, 0.12); transform: translateX(4px); }
+        /* 卡片通用样式 */
+        .card { background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.6); border-radius: 16px; padding: 16px; transition: 0.2s; display: none; /* 默认隐藏，JS控制显示 */ }
+        .card.visible { display: block; animation: slideIn 0.2s ease-out; }
+        
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
         .card-title { font-size: 11px; font-weight: 700; color: #b2bec3; text-transform: uppercase; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
 
-        /* 控件 */
         .row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
         .row label { font-size: 12px; width: 40px; color: #636e72; flex-shrink: 0; font-weight: 600; }
         
         input, select {
-            background: #fff; border: 1px solid #dfe6e9; color: #2d3436;
-            padding: 0 10px; border-radius: 6px; font-size: 13px; width: 100%;
+            background: rgba(255,255,255,0.8); border: 1px solid #dfe6e9; color: #2d3436;
+            padding: 0 10px; border-radius: 8px; font-size: 13px; width: 100%;
             transition: 0.2s; height: 32px;
         }
-        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.15); }
+        input:focus, select:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15); }
         
         input[type="color"] { padding: 0; width: 32px; min-width: 32px; cursor: pointer; border: 2px solid #fff; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 6px; }
-        input[type="range"] { -webkit-appearance: none; height: 4px; background: #dfe6e9; padding: 0; border: none; border-radius: 2px; }
+        input[type="range"] { -webkit-appearance: none; height: 4px; background: rgba(0,0,0,0.05); padding: 0; border: none; border-radius: 2px; }
         input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--primary); border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.1s; }
         input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
         button {
-            background: #fff; border: 1px solid #dfe6e9; color: #636e72;
-            padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600;
+            background: rgba(255,255,255,0.6); border: 1px solid rgba(0,0,0,0.05); color: #636e72;
+            padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 600;
             transition: 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 6px; justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
-        button:hover { border-color: var(--primary); color: var(--primary); background: #fdfdff; }
+        button:hover { border-color: var(--primary); color: var(--primary); background: #fff; transform: translateY(-1px); }
+        
         button.primary {
-            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
-            border: none; color: white; width: 100%; padding: 12px;
+            background: var(--primary-grad); border: none; color: white; width: 100%; padding: 12px;
             box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3); font-size: 14px;
         }
-        button.primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(108, 92, 231, 0.4); }
-        button.icon-only { width: 32px; padding: 0; font-size: 16px; }
-        button.danger { color: #ff7675; border-color: #ff7675; background: rgba(255, 118, 117, 0.1); }
-        button.danger:hover { background: #ff7675; color: #fff; }
+        button.primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(108, 92, 231, 0.4); color: #fff; }
+        
+        button.icon-only { width: 36px; padding: 0; font-size: 16px; }
+        button.danger { color: #ff7675; } button.danger:hover { background: #ffeaea; border-color: #ff7675; }
 
-        .palette { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;}
-        .dot { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s; position: relative;}
+        .palette { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;}
+        .dot { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s; }
         .dot:hover { transform: scale(1.15); z-index: 2; }
+
+        /* 弹窗系统 */
+        .modal-mask {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.2); backdrop-filter: blur(5px);
+            z-index: 2000; display: none; align-items: center; justify-content: center;
+        }
+        .modal {
+            background: #fff; width: 360px; padding: 24px; border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            animation: modalPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .modal-header { font-size: 16px; font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; }
+        .modal-close { cursor: pointer; color: #ccc; } .modal-close:hover { color: #333; }
+        
+        .preset-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .preset-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 10px; background: #f8f9fa; border-radius: 8px; border: 1px solid #eee;
+        }
+        .preset-item:hover { background: #fff; border-color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 
         /* 视口 */
         .viewport {
             flex: 1; position: relative; overflow: hidden;
-            background-image: radial-gradient(#d1d8e0 1.5px, transparent 1.5px);
+            background: transparent;
+            background-image: radial-gradient(rgba(108, 92, 231, 0.1) 1.5px, transparent 1.5px);
             background-size: 24px 24px;
             cursor: grab;
         }
         .viewport:active { cursor: grabbing; }
-        canvas { display: block; border-radius: 2px; box-shadow: 0 30px 60px -12px rgba(0,0,0,0.2); }
+        
+        canvas { 
+            display: block; background: #fff; border-radius: 4px; 
+            box-shadow: 0 30px 80px -10px rgba(50, 50, 93, 0.15), 0 18px 36px -18px rgba(0, 0, 0, 0.1);
+        }
 
-        /* 覆盖层 */
         .drop-overlay {
-            position: fixed; inset: 0; background: rgba(108, 92, 231, 0.1);
-            border: 6px dashed var(--primary); z-index: 999;
+            position: fixed; inset: 0; background: rgba(255, 255, 255, 0.8);
+            border: 8px dashed var(--primary); z-index: 999;
             display: none; align-items: center; justify-content: center;
-            font-size: 32px; font-weight: 800; color: var(--primary); backdrop-filter: blur(4px);
+            font-size: 32px; font-weight: 800; color: var(--primary); backdrop-filter: blur(10px);
         }
         
-        .empty-tip { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; pointer-events:none; opacity:0.5; }
-        .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 1000; display: none; flex-direction:column; justify-content: center; align-items: center; }
-        
-        /* === 弹窗样式 (Modal) === */
-        .modal-mask {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
-            z-index: 1000; display: none; justify-content: center; align-items: center;
-        }
-        .modal {
-            background: #fff; width: 400px; max-height: 80vh;
-            border-radius: 20px; padding: 24px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            display: flex; flex-direction: column; gap: 15px;
-            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        .modal-head { font-size: 18px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
-        .modal-close { cursor: pointer; font-size: 20px; color: #aaa; }
-        .modal-body { overflow-y: auto; max-height: 50vh; display: flex; flex-direction: column; gap: 10px; }
-        
-        .preset-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px; background: #f8f9fa; border-radius: 12px; border: 1px solid #eee;
-            transition: 0.2s;
-        }
-        .preset-item:hover { background: #fff; border-color: var(--primary); box-shadow: 0 4px 12px rgba(108, 92, 231, 0.1); }
-        .preset-name { font-weight: 600; color: #2d3436; font-size: 14px; }
-        .preset-actions { display: flex; gap: 8px; }
+        .empty-tip { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; pointer-events:none; opacity:0.6; color:#2d3436; }
+        .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 1000; display: none; flex-direction:column; justify-content: center; align-items: center; color:#2d3436; font-weight:bold;}
 
+        .top-actions {
+            position: absolute; top: 20px; right: 20px; z-index: 200;
+            display: flex; gap: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 10px 15px; border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.6);
+            align-items: center;
+        }
     </style>
 </head>
 <body>
 
-<!-- 预设管理弹窗 -->
-<div class="modal-mask" id="save-modal">
+<!-- 弹窗：保存预设 -->
+<div class="modal-mask" id="modal-save">
     <div class="modal">
-        <div class="modal-head">保存预设 <span class="modal-close" onclick="app.closeModal('save')">×</span></div>
-        <input type="text" id="preset-name-input" placeholder="输入预设名称 (例如: 小红书竖版)" style="height: 44px; font-size: 14px;">
+        <div class="modal-header">保存当前预设 <span class="modal-close" onclick="app.closeModal('save')">×</span></div>
+        <input type="text" id="preset-name" placeholder="给预设起个名字..." style="margin-bottom: 15px; border: 2px solid var(--primary);">
         <button class="primary" onclick="app.confirmSave()">确认保存</button>
     </div>
 </div>
 
-<div class="modal-mask" id="load-modal">
+<!-- 弹窗：读取预设 -->
+<div class="modal-mask" id="modal-load">
     <div class="modal">
-        <div class="modal-head">读取预设 <span class="modal-close" onclick="app.closeModal('load')">×</span></div>
-        <div class="modal-body" id="preset-list">
-            <!-- 预设列表动态生成 -->
-            <div style="text-align:center; color:#aaa; padding:20px;">暂无保存的预设</div>
+        <div class="modal-header">我的预设库 <span class="modal-close" onclick="app.closeModal('load')">×</span></div>
+        <div class="preset-list" id="preset-list">
+            <!-- 动态生成 -->
         </div>
     </div>
 </div>
 
-<!-- 拖拽覆盖 -->
 <div class="drop-overlay" id="drop-overlay">📂 松开鼠标添加图片</div>
 
-<!-- 右上角 -->
+<!-- 右上角：导出 -->
 <div class="top-actions">
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
         <div style="font-size:10px; color:#b2bec3; font-weight:bold; text-transform:uppercase;">Export</div>
         <div style="display:flex; gap:5px; align-items:center;">
-            <input type="number" id="dl-start" value="1" title="起始号" oninput="app.render()" style="width:36px; height:20px; font-size:12px; padding:0; text-align:center; border:none; background:transparent;">
+            <input type="number" id="dl-start" value="1" title="起始号" oninput="app.render()" style="width:36px; height:20px; padding:0; text-align:center; border:none; background:transparent;">
             <span style="color:#d1d5db; font-size:12px;">-</span>
-            <input type="number" id="dl-count" value="5" title="数量" style="width:36px; height:20px; font-size:12px; padding:0; text-align:center; border:none; background:transparent;">
+            <input type="number" id="dl-count" value="5" title="数量" style="width:36px; height:20px; padding:0; text-align:center; border:none; background:transparent;">
         </div>
     </div>
     <div style="width:1px; height:24px; background:rgba(0,0,0,0.06);"></div>
@@ -171,37 +194,38 @@
         <option value="single">逐张下载</option>
         <option value="zip">打包 ZIP</option>
     </select>
-    <button class="primary" onclick="app.download()" style="width:auto; padding: 10px 24px;">导出</button>
+    <button class="primary" onclick="app.download()" style="width:auto; padding: 10px 24px;">
+        导出文件
+    </button>
 </div>
 
 <div class="sidebar">
     <div class="header">
         <div class="brand">Mixboard <span>PRO</span></div>
         <div style="display:flex; gap:6px;">
-            <button class="icon-only" onclick="app.undo()" title="撤回 (Ctrl+Z)">↩️</button>
-            <button class="icon-only" onclick="app.redo()" title="重做 (Ctrl+Y)">↪️</button>
-            <button onclick="app.openSave()" title="保存预设">💾</button>
-            <button onclick="app.reset(true)" title="重置">↻</button>
+            <button class="icon-only" onclick="app.undo()" title="撤回">↩️</button>
+            <button class="icon-only" onclick="app.redo()" title="重做">↪️</button>
+            <button onclick="app.openSave()" title="保存预设">💾 存</button>
+            <button onclick="app.reset(true)">重置</button>
         </div>
     </div>
     
     <div class="content">
-        <!-- 预设栏 -->
         <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: -10px;">
             <label style="font-size:11px; font-weight:700; color:#b2bec3;">QUICK ACTIONS</label>
-            <button onclick="app.openLoad()" style="padding:6px 12px; font-size:11px; background:rgba(108,92,231,0.08); color:var(--primary); border:none;">📂 管理预设</button>
+            <button onclick="app.openLoad()" style="padding:6px 12px; font-size:11px; background:rgba(108,92,231,0.08); color:var(--primary); border:none;">📂 读取预设</button>
         </div>
 
-        <!-- 1. 全局 -->
-        <div class="card" id="p-global">
+        <!-- 1. 全局面板 (默认显示) -->
+        <div class="card visible" id="p-global">
             <div class="card-title">
                 <span>画布 & 底色</span>
-                <select id="ratio-preset" onchange="app.applyRatio(this.value)" style="width:90px; height:24px; padding:0 4px; border:none; background:transparent; text-align:right;">
+                <select id="ratio-preset" onchange="app.applyRatio(this.value)" style="width:90px; height:24px; padding:0 4px; border:none; background:transparent; text-align:right; color:#6b7280;">
                     <option value="custom">自定义</option>
-                    <option value="750,1000">3:4 (小红书)</option>
-                    <option value="720,1280">9:16 (抖音)</option>
-                    <option value="1280,720">16:9 (横屏)</option>
-                    <option value="1080,1080">1:1 (正方形)</option>
+                    <option value="750,1000">3:4 小红书</option>
+                    <option value="720,1280">9:16 抖音</option>
+                    <option value="1280,720">16:9 横屏</option>
+                    <option value="1080,1080">1:1 正方形</option>
                 </select>
             </div>
             <div class="row">
@@ -228,20 +252,40 @@
                     <div class="dot" style="background:#ff7675" onclick="app.applyColor('#ff7675')"></div>
                     <div class="dot" style="background:#74b9ff" onclick="app.applyColor('#74b9ff')"></div>
                     <div class="dot" style="background:#a29bfe" onclick="app.applyColor('#a29bfe')"></div>
+                    <div class="dot" style="background:#00cec9" onclick="app.applyColor('#00cec9')"></div>
+                    <div class="dot" style="background:#fd79a8" onclick="app.applyColor('#fd79a8')"></div>
                 </div>
             </div>
 
-            <button class="primary" style="margin-top:15px;" onclick="document.getElementById('uplogo').click()">🖼️ 替换 Logo</button>
+            <button class="primary" style="margin-top:15px;" onclick="document.getElementById('uplogo').click()">
+                🖼️ 替换 Logo
+            </button>
             <input type="file" id="uplogo" hidden accept="image/*" onchange="app.loadImg(this, 'logo')">
         </div>
 
-        <!-- 2. 文字样式 -->
-        <div class="card" id="p-txt">
-            <div class="card-title">
-                <span>文字样式</span>
-                <button onclick="app.addText()" style="padding:4px 8px; font-size:10px;">+ 添加</button>
+        <!-- 2. 序号模式 (仅选中序号时显示) -->
+        <div class="card" id="p-num-mode">
+            <div class="card-title">序号模式</div>
+            <div class="row">
+                <select id="n-st" onchange="app.pushHistory(); app.updateSel('st',this.value)">
+                    <option value="plain">纯数字</option>
+                    <option value="circle">圆圈 ①</option>
+                    <option value="box">方块 [1]</option>
+                    <option value="underline">下划线 _1_</option>
+                </select>
+                <input type="color" id="n-c" value="#000000" onchange="app.pushHistory()" oninput="app.updateSel('c',this.value)">
             </div>
-            <input type="text" id="t-val" placeholder="选择文字..." onchange="app.pushHistory()" oninput="app.updateSel('val',this.value)" style="margin-bottom:10px; font-weight:bold;">
+        </div>
+
+        <!-- 3. 通用文字样式 (选中文字或序号时显示) -->
+        <div class="card" id="p-style">
+            <div class="card-title">
+                <span>样式设置</span>
+                <button onclick="app.addText()" style="padding:4px 8px; font-size:10px;">+ 添加文字</button>
+            </div>
+            <!-- 内容输入 (针对文字是文本框，针对序号不可编辑) -->
+            <input type="text" id="t-val" placeholder="输入内容..." onchange="app.pushHistory()" oninput="app.updateSel('val',this.value)" style="margin-bottom:10px; font-weight:bold; font-size:14px;">
+            
             <div class="row">
                 <select id="t-font" onchange="app.pushHistory(); app.updateSel('font',this.value)">
                     <option value="'Ma Shan Zheng'">江湖体 (默认)</option>
@@ -250,6 +294,7 @@
                     <option value="'Noto Sans SC'">思源黑体 (标准)</option>
                     <option value="'Noto Serif SC'">思源宋体 (传统)</option>
                     <option value="'ZCOOL KuaiLe'">站酷快乐</option>
+                    <option value="'Arial'">系统数字</option>
                 </select>
             </div>
             <div class="row">
@@ -263,44 +308,13 @@
             <div class="row">
                 <label>颜色</label>
                 <input type="color" id="t-c" value="#000000" onchange="app.pushHistory()" oninput="app.updateSel('c',this.value)">
-                <label style="margin-left:auto;">字距</label>
+                <label style="margin-left:auto; width:auto; margin-right:5px;">字距</label>
                 <input type="range" min="-10" max="50" value="0" onmousedown="app.pushHistory()" oninput="app.updateSel('sp',this.value)" id="t-sp">
             </div>
             <div class="row">
                 <label>阴影</label>
                 <input type="color" id="t-sc" value="#000000" onchange="app.pushHistory()" oninput="app.updateSel('sc',this.value)">
                 <input type="range" max="30" value="0" onmousedown="app.pushHistory()" oninput="app.updateSel('sb',this.value)" id="t-sb">
-            </div>
-        </div>
-
-        <!-- 3. 序号 -->
-        <div class="card" id="p-num">
-            <div class="card-title">序号样式</div>
-            <div class="row">
-                <select id="n-st" onchange="app.pushHistory(); app.updateNum('st',this.value)">
-                    <option value="plain">纯数字</option>
-                    <option value="circle">圆圈 ①</option>
-                    <option value="box">方块 [1]</option>
-                    <option value="underline">下划线 _1_</option>
-                </select>
-                <input type="color" id="n-c" value="#000000" onchange="app.pushHistory()" oninput="app.updateNum('c',this.value)">
-            </div>
-            <div class="row">
-                <select id="n-font" onchange="app.pushHistory(); app.updateNum('font',this.value)">
-                    <option value="'Ma Shan Zheng'">江湖体 (默认)</option>
-                    <option value="'Arial'">系统数字</option>
-                </select>
-            </div>
-            <div class="row">
-                <label>字号</label>
-                <input type="range" min="20" max="250" id="n-s" onmousedown="app.pushHistory()" oninput="app.updateNum('s',this.value)">
-            </div>
-            <div class="row">
-                <label>粗细</label> <input type="range" min="100" max="900" id="n-w" onmousedown="app.pushHistory()" oninput="app.updateNum('w',this.value)">
-            </div>
-            <div class="row">
-                <label>阴影</label> <input type="color" id="n-sc" onchange="app.pushHistory()" oninput="app.updateNum('sc',this.value)">
-                <input type="range" max="30" id="n-sb" onmousedown="app.pushHistory()" oninput="app.updateNum('sb',this.value)">
             </div>
         </div>
     </div>
@@ -310,8 +324,8 @@
     <canvas id="cvs"></canvas>
     <div class="empty-tip" id="empty-tip">
         <div style="font-size:48px; margin-bottom:16px;">📂</div>
-        <div style="font-weight:700; font-size:18px;">拖入图片开始设计</div>
-        <div style="color:#636e72; font-size:13px; margin-top:8px;">空格+拖拽平移 | Backspace删除</div>
+        <div style="font-weight:700; font-size:18px; color:#2d3436;">拖入图片开始设计</div>
+        <div style="color:#636e72; font-size:12px; margin-top:8px;">空格+拖拽平移 | Backspace删除</div>
     </div>
 </div>
 
@@ -457,22 +471,6 @@ const app = {
         this.syncUI();
     },
 
-    // 新增：添加文字功能
-    addText() {
-        this.pushHistory();
-        this.items.push({
-            type: 'txt',
-            val: '输入文字',
-            x: this.board.w / 2,
-            y: this.board.h / 2,
-            font: "'Ma Shan Zheng'",
-            s: 80, w: 400, sp: 0, c: '#000000', sc: '#000000', sb: 0, r: 0, z: 300 // higher z
-        });
-        this.sel = this.items[this.items.length-1];
-        this.syncUI(this.sel);
-        this.render();
-    },
-
     resizeViewport() {
         this.cvs.width = document.getElementById('viewport').clientWidth;
         this.cvs.height = document.getElementById('viewport').clientHeight;
@@ -481,45 +479,4 @@ const app = {
     
     resizeBoard() {
         this.board.w = parseInt(document.getElementById('cw').value);
-        this.board.h = parseInt(document.getElementById('ch').value);
-        this.render();
-    },
-
-    applyRatio(val) {
-        if(val === 'custom') return;
-        const [w, h] = val.split(',');
-        document.getElementById('cw').value = w;
-        document.getElementById('ch').value = h;
-        this.pushHistory();
-        this.resizeBoard();
-        this.centerView();
-    },
-
-    centerView() {
-        this.view.x = this.cvs.width/2;
-        this.view.y = this.cvs.height/2;
-        this.view.zoom = Math.min((this.cvs.width-100)/this.board.w, (this.cvs.height-100)/this.board.h);
-        this.render();
-    },
-
-    deleteSelection() {
-        if(this.sel) {
-            this.pushHistory();
-            this.items = this.items.filter(i => i !== this.sel);
-            this.sel = null;
-            this.render();
-        }
-    },
-
-    // --- 预设管理 ---
-    openSave() { document.getElementById('save-modal').style.display = 'flex'; },
-    closeModal(id) { document.getElementById(id+'-modal').style.display = 'none'; },
-    
-    confirmSave() {
-        const name = document.getElementById('preset-name-input').value;
-        if(!name) return alert("请输入名称");
-        
-        const data = this.items.map(x=>{const c={...x}; delete c.img; delete c._box; return c;});
-        const st = {
-            w:this.board.w, h:this.board.h, 
-            bar: { h:document.getElementById('barH').value, f:document.getElemen
+        this.board.h = parseInt(document.getElem
