@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mixboard Pro - 字体修复版</title>
-    <!-- 核心库 -->
+    <title>Mixboard Pro - 终极修复版</title>
+    <!-- 核心库 (国内源) -->
     <script src="https://cdn.bootcdn.net/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <!-- 字体库 -->
@@ -27,8 +27,7 @@
             --text-sub: #636e72;
         }
 
-        /* 1. 绝对定位布局 - 防止画布塌陷 */
-        html, body { 
+        body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background-color: #ffffff;
             background-image: var(--aurora-bg);
@@ -69,8 +68,12 @@
         }
         .viewport:active { cursor: grabbing; }
 
-        /* 画布强制填满 */
-        canvas { display: block; width: 100%; height: 100%; }
+        /* 修复：Canvas 绝对定位，防止塌陷 */
+        canvas { 
+            display: block; 
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; 
+        }
 
         /* 控件 */
         .card { background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.6); border-radius: 12px; padding: 16px; transition: 0.2s; }
@@ -108,7 +111,7 @@
         button.danger { color: #e74c3c; border-color: #fab1a0; background: #fff5f5; }
 
         .palette { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;}
-        .dot { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s; }
+        .dot { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s; }
         .dot:hover { transform: scale(1.15); z-index: 2; }
 
         /* 顶部悬浮 */
@@ -129,8 +132,12 @@
             font-size: 32px; font-weight: 800; color: var(--primary); backdrop-filter: blur(10px);
         }
         
-        .empty-tip { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; pointer-events:none; opacity:0.6; color:#2d3436; width:100%; }
-        .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 1000; display: none; flex-direction:column; justify-content: center; align-items: center; color:#2d3436; font-weight:bold;}
+        .empty-tip { 
+            position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); 
+            text-align:center; pointer-events:none; opacity:0.6; color:#2d3436; width:100%;
+            z-index: 0; /* 确保在 Canvas 下层，但在 Viewport 中 */
+        }
+        .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 1000; display: none; flex-direction:column; justify-content: center; align-items: center; font-weight: bold; color: #2d3436; }
 
         /* 弹窗 */
         .modal-mask {
@@ -151,18 +158,15 @@
         .modal-body { overflow-y: auto; max-height: 50vh; display: flex; flex-direction: column; gap: 10px; }
         .preset-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 12px; border: 1px solid #eee; transition: 0.2s; }
         .preset-item:hover { background: #fff; border-color: var(--primary); box-shadow: 0 4px 12px rgba(108, 92, 231, 0.1); }
-        
-        /* 隐藏的字体加载辅助器 */
-        #font-loader { position:absolute; top:-9999px; visibility:hidden; }
     </style>
 </head>
 <body>
 
 <div class="drop-overlay" id="drop-overlay">📂 松开鼠标添加图片</div>
-<div class="loader" id="loader">Processing...</div>
-<div id="font-loader"></div>
 
-<!-- 右上角：导出 -->
+<div class="loader" id="loader">Processing...</div>
+
+<!-- 右上角 -->
 <div class="top-actions">
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
         <span style="font-size:10px; color:#b2bec3; font-weight:bold;">EXPORT</span>
@@ -199,8 +203,8 @@
     <div class="header">
         <div class="brand">Mixboard <span>PRO</span></div>
         <div style="display:flex; gap:6px;">
-            <button class="icon-only" onclick="app.undo()" title="撤回 (Ctrl+Z)">↩️</button>
-            <button class="icon-only" onclick="app.redo()" title="重做 (Ctrl+Y)">↪️</button>
+            <button class="icon-only" onclick="app.undo()" title="撤回">↩</button>
+            <button class="icon-only" onclick="app.redo()" title="重做">↪</button>
             <button onclick="app.openSave()" title="保存">💾</button>
             <button onclick="app.reset(true)" title="重置">↻</button>
         </div>
@@ -220,7 +224,7 @@
         <div class="card" id="p-global">
             <div class="card-title">
                 <span>画布 & 底色</span>
-                <select id="ratio-preset" onchange="app.applyRatio(this.value)" style="width:90px; height:24px; padding:0; border:none; background:transparent; text-align:right;">
+                <select id="ratio-preset" onchange="app.applyRatio(this.value)" style="width:90px; height:24px; padding:0 4px; border:none; background:transparent; text-align:right;">
                     <option value="custom">自定义</option>
                     <option value="750,1000">3:4 小红书</option>
                     <option value="720,1280">9:16 抖音</option>
@@ -350,7 +354,6 @@ function invertColor(hex) {
     const r = parseInt(hex.substr(1,2),16), g = parseInt(hex.substr(3,2),16), b = parseInt(hex.substr(5,2),16);
     return (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000000' : '#ffffff';
 }
-const rgbToHex = (r,g,b) => "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
 
 const app = {
     view: { x: 0, y: 0, zoom: 0.6 },
@@ -362,63 +365,33 @@ const app = {
     ctx: document.getElementById('cvs').getContext('2d'),
 
     init() {
-        const resizeObserver = new ResizeObserver(() => this.resizeViewport());
-        resizeObserver.observe(document.getElementById('viewport'));
+        // 强制初始化布局
+        const vp = document.getElementById('viewport');
+        const resize = () => {
+            this.cvs.width = vp.clientWidth;
+            this.cvs.height = vp.clientHeight;
+            this.render();
+        };
+        window.addEventListener('resize', resize);
 
         window.addEventListener('keydown', e => { 
             const active = document.activeElement;
             const isInput = active.tagName === 'INPUT' || active.tagName === 'SELECT' || active.tagName === 'TEXTAREA';
             
-            if(e.code==='Space' && !isInput) document.getElementById('viewport').style.cursor='grab'; 
+            if(e.code==='Space' && !isInput) vp.style.cursor='grab'; 
             if((e.code==='Backspace' || e.code==='Delete') && !isInput) this.deleteSelection();
             if((e.ctrlKey||e.metaKey) && e.key==='z' && !isInput) { e.preventDefault(); this.undo(); }
             if((e.ctrlKey||e.metaKey) && e.key==='y' && !isInput) { e.preventDefault(); this.redo(); }
         });
-        window.addEventListener('keyup', e => { document.getElementById('viewport').style.cursor='default'; });
+        window.addEventListener('keyup', e => { vp.style.cursor='default'; });
 
-        const overlay = document.getElementById('drop-overlay');
-        let dc=0;
-        document.addEventListener('dragenter', e=>{e.preventDefault(); dc++; overlay.style.display='flex'});
-        document.addEventListener('dragleave', e=>{e.preventDefault(); dc--; if(dc===0) overlay.style.display='none'});
-        document.addEventListener('dragover', e=>e.preventDefault());
-        document.addEventListener('drop', e=>{e.preventDefault(); dc=0; overlay.style.display='none'; this.handleDrop(e)});
-
-        // 延迟加载确保Canvas就位
+        // 初始化
         setTimeout(() => {
-            this.resizeViewport();
+            resize();
             this.reset();
             this.bindEvents();
             document.fonts.ready.then(() => this.render());
         }, 100);
-    },
-
-    // --- Font Loader ---
-    forceLoadFont(fontFamily) {
-        // 创建隐藏元素强制浏览器下载字体
-        const div = document.createElement('div');
-        div.style.fontFamily = fontFamily;
-        div.style.position = 'absolute';
-        div.style.visibility = 'hidden';
-        div.innerText = 'FontLoader';
-        document.getElementById('font-loader').appendChild(div);
-        
-        // 等待加载
-        return document.fonts.load(`20px ${fontFamily}`);
-    },
-
-    updateSel(k, v) { 
-        if(!this.sel) return; 
-        
-        // 关键修复：字体切换
-        if(k === 'font') {
-            this.sel[k] = v; // 先应用值
-            this.forceLoadFont(v).then(() => {
-                this.render(); // 加载完再刷新
-            });
-        } else {
-            this.sel[k] = v; 
-        }
-        this.render(); 
     },
 
     pushHistory() {
@@ -517,15 +490,6 @@ const app = {
         this.render();
     },
 
-    resizeViewport() {
-        const vp = document.getElementById('viewport');
-        if (vp.clientWidth > 0 && vp.clientHeight > 0) {
-            this.cvs.width = vp.clientWidth;
-            this.cvs.height = vp.clientHeight;
-            this.render();
-        }
-    },
-    
     resizeBoard() {
         this.board.w = parseInt(document.getElementById('cw').value);
         this.board.h = parseInt(document.getElementById('ch').value);
@@ -566,20 +530,14 @@ const app = {
         const data = this.items.filter(x => x.type !== 'img' || x.isLogo).map(x => {
             const c = {...x}; delete c.img; delete c._box; return c;
         });
-
         const st = {
-            w: this.board.w, 
-            h: this.board.h, 
-            bar: { 
-                h: document.getElementById('barH').value, 
-                f: document.getElementById('barF').value, 
-                c: document.getElementById('barC').value 
-            },
+            w: this.board.w, h: this.board.h, 
+            bar: { h: document.getElementById('barH').value, f: document.getElementById('barF').value, c: document.getElementById('barC').value },
             items: data
         };
         localStorage.setItem('PRE_'+n, JSON.stringify(st));
         this.closeModal('save');
-        alert("预设保存成功！(背景图不会被保存)");
+        alert("预设保存成功！");
     },
     openLoad() {
         const l = document.getElementById('preset-list'); l.innerHTML = '';
@@ -627,6 +585,8 @@ const app = {
     // --- Render ---
     render(exp=false, numOv=null) {
         const ctx = this.ctx;
+        if(!this.cvs.width) return; // 安全检查
+
         if(!exp) {
             ctx.resetTransform(); ctx.clearRect(0,0,this.cvs.width, this.cvs.height);
             ctx.translate(this.view.x, this.view.y); ctx.scale(this.view.zoom, this.view.zoom);
@@ -657,7 +617,7 @@ const app = {
             ctx.fillStyle=bC; ctx.fillRect(0, this.board.h-bH, this.board.w, bH);
         }
 
-        // 3. Top Elements
+        // 3. Elements
         list.filter(x=>!(x.type==='img'&&!x.isLogo)).forEach(o=>{
             let v = null;
             if(o.type==='num') v = (exp && numOv!==null) ? numOv : document.getElementById('dl-start').value;
@@ -684,7 +644,6 @@ const app = {
         } else if(o.type==='num') {
             const v = String(override); ctx.fillStyle=o.c; ctx.font=`${o.w} ${o.s}px ${o.font}`;
             ctx.textAlign="center"; ctx.textBaseline="middle"; const m=ctx.measureText(v);
-            
             if(o.st==='plain') { ctx.fillText(v,0,0); bw=m.width; bh=o.s*1.1; }
             else if(o.st==='circle') {
                 const r=o.s*0.65; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.lineWidth=Math.max(2,o.s*0.05); ctx.strokeStyle=o.c; ctx.stroke();
@@ -710,16 +669,13 @@ const app = {
 
     drawSelection(ctx, o) {
         if(!o._box) return;
-        ctx.save(); 
-        ctx.translate(o.x, o.y); ctx.rotate(o.r);
+        ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.r);
         const w=o._box.w+10, h=o._box.h+10;
-        
         ctx.strokeStyle="#6c5ce7"; ctx.lineWidth=1.5; ctx.setLineDash([5,3]); ctx.strokeRect(-w/2,-h/2,w,h);
         ctx.setLineDash([]); ctx.fillStyle="#fff"; ctx.strokeStyle="#6c5ce7"; ctx.lineWidth=2;
         [[-w/2,-h/2],[w/2,-h/2],[-w/2,h/2],[w/2,h/2]].forEach(p=>{
             ctx.beginPath(); ctx.arc(p[0],p[1],5,0,Math.PI*2); ctx.fill(); ctx.stroke();
         });
-        
         ctx.beginPath(); ctx.moveTo(0,h/2); ctx.lineTo(0,h/2+25); ctx.stroke();
         ctx.beginPath(); ctx.arc(0,h/2+25,6,0,Math.PI*2); ctx.fill(); ctx.stroke();
         ctx.restore();
@@ -727,4 +683,148 @@ const app = {
 
     drawGuides(ctx, o) {
         const cx=this.board.w/2, cy=this.board.h/2, snap=8;
-        if(Math.abs(o.x-cx)<snap) { o.x=cx; ctx.save(); ct
+        if(Math.abs(o.x-cx)<snap) { o.x=cx; ctx.save(); ctx.lineWidth=1; ctx.strokeStyle="#fd79a8"; ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,this.board.h); ctx.stroke(); ctx.restore(); }
+        if(Math.abs(o.y-cy)<snap) { o.y=cy; ctx.save(); ctx.lineWidth=1; ctx.strokeStyle="#fd79a8"; ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(this.board.w,cy); ctx.stroke(); ctx.restore(); }
+    },
+
+    getPos(e) {
+        const r=this.cvs.getBoundingClientRect();
+        return {x:(e.clientX-r.left-this.view.x)/this.view.zoom+this.board.w/2, y:(e.clientY-r.top-this.view.y)/this.view.zoom+this.board.h/2};
+    },
+    toLoc(pt, o) {
+        const dx=pt.x-o.x, dy=pt.y-o.y, c=Math.cos(-o.r), s=Math.sin(-o.r);
+        return {x:dx*c-dy*s, y:dx*s+dy*c};
+    },
+
+    bindEvents() {
+        const v = document.getElementById('viewport');
+        const overlay = document.getElementById('drop-overlay');
+        let dc=0;
+        document.addEventListener('dragenter', e=>{e.preventDefault(); dc++; overlay.style.display='flex'});
+        document.addEventListener('dragleave', e=>{e.preventDefault(); dc--; if(dc===0) overlay.style.display='none'});
+        document.addEventListener('dragover', e=>e.preventDefault());
+        document.addEventListener('drop', e=>{e.preventDefault(); dc=0; overlay.style.display='none'; this.handleDrop(e)});
+
+        v.addEventListener('mousedown', e=>{
+            const p=this.getPos(e);
+            if(e.code==='Space'||e.button===1) { this.mode='pan'; this.lastP={x:e.clientX, y:e.clientY}; return; }
+
+            if(this.sel && this.sel._box) {
+                const l=this.toLoc(p, this.sel), w=this.sel._box.w+14, h=this.sel._box.h+14;
+                if(Math.hypot(l.x, l.y-(-h/2-25))<15) { this.pushHistory(); this.mode='rot'; this.initV={r:this.sel.r, ang:Math.atan2(p.y-this.sel.y, p.x-this.sel.x)}; return; }
+                if(Math.abs(l.x)>w/2-15 && Math.abs(l.y)>h/2-15) { this.pushHistory(); this.mode='scale'; this.initV={s:this.sel.s, d:Math.hypot(p.x-this.sel.x, p.y-this.sel.y)}; return; }
+            }
+
+            const list = [...this.items].sort((a,b)=>b.z-a.z);
+            let hit = null;
+            for(let o of list) {
+                if(!o._box) continue;
+                const l=this.toLoc(p, o);
+                if(Math.abs(l.x)<o._box.w/2 && Math.abs(l.y)<o._box.h/2) { hit=o; break; }
+            }
+
+            if(hit) {
+                if(this.sel!==hit) { this.sel=hit; this.highlightPanel(hit.type); this.syncUI(hit); }
+                this.pushHistory(); this.mode='drag'; this.startP=p;
+            } else {
+                this.sel=null; this.mode='pan'; this.lastP={x:e.clientX, y:e.clientY};
+                this.highlightPanel('global');
+            }
+            this.render();
+        });
+
+        window.addEventListener('mousemove', e=>{
+            if(!this.mode) return;
+            if(this.mode==='pan') { this.view.x+=e.clientX-this.lastP.x; this.view.y+=e.clientY-this.lastP.y; this.lastP={x:e.clientX, y:e.clientY}; this.render(); return; }
+            const p=this.getPos(e);
+            if(this.mode==='drag'&&this.sel) { this.sel.x+=p.x-this.startP.x; this.sel.y+=p.y-this.startP.y; this.startP=p; }
+            else if(this.mode==='rot'&&this.sel) { const ang=Math.atan2(p.y-this.sel.y, p.x-this.sel.x); this.sel.r=this.initV.r+(ang-this.initV.ang); }
+            else if(this.mode==='scale'&&this.sel) { const d=Math.hypot(p.x-this.sel.x, p.y-this.sel.y); this.sel.s=Math.max(0.01, this.initV.s*(d/this.initV.d)); }
+            this.render();
+        });
+
+        window.addEventListener('mouseup', ()=>this.mode=null);
+        v.addEventListener('wheel', e=>{ e.preventDefault(); this.view.zoom*=e.deltaY>0?0.9:1.1; this.render(); }, {passive:false});
+    },
+
+    updateSel(k, v) { 
+        if(!this.sel) return; 
+        if(k==='font') document.fonts.load(`30px ${v}`).then(()=>{this.sel[k]=v; this.render()});
+        else this.sel[k]=v; 
+        this.render(); 
+    },
+    
+    handleDrop(e) {
+        const f=e.dataTransfer.files[0];
+        if(f&&f.type.startsWith('image')) {
+            const r=new FileReader();
+            r.onload=ev=>{
+                const i=new Image();
+                i.onload=()=>{
+                    this.extractColors(i); this.pushHistory();
+                    this.items = this.items.filter(x=>x.type!=='img'||x.isLogo);
+                    const s=Math.max(this.board.w/i.width, this.board.h/i.height);
+                    this.items.push({type:'img', img:i, w:i.width, h:i.height, x:this.board.w/2, y:this.board.h/2, s:s, r:0, z:50});
+                    this.render();
+                }; i.src=ev.target.result;
+            }; r.readAsDataURL(f);
+        }
+    },
+    loadImg(el, t) {
+        if(!el.files[0]) return; const r=new FileReader();
+        r.onload=e=>{
+            const i=new Image(); i.crossOrigin="Anonymous";
+            i.onload=()=>{ this.pushHistory(); const l=this.items.find(x=>x.id==='logo'); l.img=i; l.w=i.width; l.h=i.height; l.s=200/i.width; this.render(); };
+            i.src=e.target.result;
+        }; r.readAsDataURL(el.files[0]);
+    },
+    extractColors(img) {
+        const c=document.createElement('canvas'); c.width=50; c.height=50; const x=c.getContext('2d'); x.drawImage(img,0,0,50,50);
+        const d=x.getImageData(0,0,50,50).data, colors=[];
+        for(let i=0;i<d.length;i+=400) colors.push(`rgb(${d[i]},${d[i+1]},${d[i+2]})`);
+        const dots=document.getElementById('smart-colors').children;
+        [...new Set(colors)].slice(0,8).forEach((c,i)=>{ if(dots[i]) { dots[i].style.background=c; dots[i].onclick=()=>{this.pushHistory(); this.applyColor(this.rgbToHex(c))}; } });
+    },
+    applyColor(h) {
+        document.getElementById('barC').value=h; const ic=invertColor(h);
+        this.items.forEach(i=>{if(i.type==='txt'||i.type==='num')i.c=ic});
+        if(this.sel) this.syncUI(this.sel); this.render();
+    },
+    rgbToHex(c) { const[r,g,b]=c.match(/\d+/g); return "#"+((1<<24)+(+r<<16)+(+g<<8)+(+b)).toString(16).slice(1); },
+    highlightPanel(t) { document.querySelectorAll('.card').forEach(c=>c.classList.remove('active')); document.getElementById(t==='txt'?'p-txt':(t==='num'?'p-num':'p-global')).classList.add('active'); },
+    syncUI(o) {
+        if(!o) return; const pf = o.type==='txt'?'t':'n';
+        if(o.type==='txt') { document.getElementById('t-val').value=o.val; document.getElementById('t-sp').value=o.sp; }
+        if(o.type==='num') document.getElementById('n-st').value=o.st;
+        ['font','s','w','c','sc','sb'].forEach(k=>document.getElementById(`${pf}-${k}`).value=o[k]);
+    },
+
+    async download() {
+        const name = prompt("文件名", "Cover") || "Cover";
+        const type = document.getElementById('dl-type').value;
+        const start = parseInt(document.getElementById('dl-start').value);
+        const count = parseInt(document.getElementById('dl-count').value);
+        
+        document.getElementById('loader').style.display='flex';
+        this.sel=null; this.render();
+        const ec=document.createElement('canvas'), ex=ec.getContext('2d'), oc=this.ctx, ov=this.cvs;
+        this.ctx=ex; this.cvs=ec;
+
+        try {
+            if(type==='zip') {
+                const zip=new JSZip();
+                for(let i=0;i<count;i++) { this.render(true, start+i); const b=await new Promise(r=>ec.toBlob(r,'image/jpeg',0.95)); zip.file(`${name}_${start+i}.jpg`, b); }
+                saveAs(await zip.generateAsync({type:"blob"}), `${name}.zip`);
+            } else {
+                for(let i=0;i<count;i++) { this.render(true, start+i); await new Promise(r=>ec.toBlob(b=>{saveAs(b, `${name}_${start+i}.jpg`);r()},'image/jpeg',0.95)); }
+            }
+        } catch(e){alert("Error")}
+        
+        this.ctx=oc; this.cvs=ov; document.getElementById('loader').style.display='none'; this.render();
+    }
+};
+
+app.init();
+</script>
+</body>
+</html>
