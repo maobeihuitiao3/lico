@@ -3,21 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mixboard Pro - 终极修复版</title>
-    <!-- 核心库 (国内源) -->
+    <title>Mixboard Pro - Ultimate Fix</title>
+    <!-- Core Libraries -->
     <script src="https://cdn.bootcdn.net/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <!-- 字体库 -->
-    <link href="https://fonts.font.im/css2?family=Inter:wght@400;600;800&family=Liu+Jian+Mao+Cao&family=Long+Cang&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;700;900&family=Noto+Serif+SC:wght@700&family=ZCOOL+KuaiLe&family=ZCOOL+QingKe+HuangYou&family=ZCOOL+XiaoWei&family=Zhi+Mang+Xing&family=Bangers&family=Fredoka:wght@600&family=Righteous&family=Lobster&family=Alfa+Slab+One&family=Russo+One&display=swap" rel="stylesheet">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Liu+Jian+Mao+Cao&family=Long+Cang&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;700;900&family=Noto+Serif+SC:wght@700&family=ZCOOL+KuaiLe&family=ZCOOL+QingKe+HuangYou&family=ZCOOL+XiaoWei&family=Zhi+Mang+Xing&family=Bangers&family=Fredoka:wght@600&family=Righteous&family=Lobster&family=Alfa+Slab+One&family=Russo+One&display=swap" rel="stylesheet">
 
     <style>
         :root {
+            /* Aurora Colors */
             --aurora-bg: 
                 radial-gradient(at 0% 0%, hsla(253,16%,90%,1) 0, transparent 50%), 
                 radial-gradient(at 50% 0%, hsla(260, 100%, 85%, 1) 0, transparent 50%), 
                 radial-gradient(at 100% 0%, hsla(200, 100%, 85%, 1) 0, transparent 50%),
                 radial-gradient(at 0% 50%, hsla(300, 100%, 90%, 1) 0, transparent 50%),
                 radial-gradient(at 100% 100%, hsla(240, 100%, 85%, 1) 0, transparent 50%);
+
             --glass: rgba(255, 255, 255, 0.65);
             --glass-border: rgba(255, 255, 255, 0.6);
             --primary: #6c5ce7;
@@ -26,88 +28,112 @@
             --text-sub: #636e72;
         }
 
-        body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
+        /* --- Global Reset --- */
+        * { box-sizing: border-box; outline: none; }
+        
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; /* Prevent scrolling */
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #ffffff;
+            /* Dynamic Background */
             background-image: var(--aurora-bg);
             background-size: 200% 200%;
             animation: auroraMove 15s ease infinite alternate;
-            color: var(--text-main); font-family: "Inter", sans-serif; 
-            overflow: hidden; user-select: none;
+            color: var(--text-main);
+            user-select: none;
         }
 
-        @keyframes auroraMove { 0% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
-        * { box-sizing: border-box; outline: none; }
+        @keyframes auroraMove {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
 
-        /* 左侧面板 */
+        /* --- Absolute Layout Structure --- */
+        
+        /* 1. Sidebar (Fixed Left) */
         .sidebar {
-            width: 380px; background: var(--glass);
-            backdrop-filter: blur(30px); border-right: 1px solid var(--glass-border);
-            display: flex; flex-direction: column; z-index: 100;
-            box-shadow: 10px 0 30px rgba(0,0,0,0.02); flex-shrink: 0;
+            position: absolute; top: 0; left: 0; bottom: 0; width: 380px;
+            background: var(--glass);
+            backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border-right: 1px solid var(--glass-border);
+            display: flex; flex-direction: column;
+            z-index: 20;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.02);
         }
-        .header { padding: 20px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .brand { font-size: 22px; font-weight: 800; color: #2d3436; letter-spacing: -0.5px; }
-        .brand span { color: var(--primary); background: rgba(108, 92, 231, 0.1); padding: 2px 6px; border-radius: 6px; font-size: 10px; vertical-align: middle; margin-left: 5px; }
 
-        .content { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+        /* 2. Viewport (Fills remaining space) */
+        .viewport {
+            position: absolute; top: 0; left: 380px; right: 0; bottom: 0;
+            z-index: 10;
+            overflow: hidden;
+            background: transparent; /* Transparent to show aurora */
+            background-image: radial-gradient(rgba(108, 92, 231, 0.1) 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            cursor: grab;
+        }
+        .viewport:active { cursor: grabbing; }
+
+        /* 3. Canvas (Full Size of Viewport) */
+        canvas {
+            display: block; width: 100%; height: 100%;
+        }
+
+        /* 4. Top Actions (Fixed Top-Right) */
+        .top-actions {
+            position: absolute; top: 20px; right: 20px; z-index: 100;
+            display: flex; gap: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 16px; border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.6);
+            align-items: center;
+        }
+
+        /* --- UI Components --- */
+        .header { padding: 24px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-size: 22px; font-weight: 800; color: #2d3436; }
+        .brand span { color: var(--primary); background: rgba(108, 92, 231, 0.1); padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px; vertical-align: middle; }
+
+        .content { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
         .content::-webkit-scrollbar { width: 0; }
 
-        /* 卡片 */
-        .card { background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.6); border-radius: 16px; padding: 16px; transition: 0.2s; }
+        .card { background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.6); border-radius: 16px; padding: 18px; transition: 0.2s; }
         .card.active { background: #fff; border-color: var(--primary); box-shadow: 0 8px 24px rgba(108, 92, 231, 0.12); transform: translateX(4px); }
         .card-title { font-size: 11px; font-weight: 700; color: #b2bec3; text-transform: uppercase; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
 
-        /* 控件 */
         .row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
         .row label { font-size: 12px; width: 40px; color: #636e72; flex-shrink: 0; font-weight: 600; }
         
         input, select {
             background: rgba(255,255,255,0.8); border: 1px solid #dfe6e9; color: #2d3436;
             padding: 0 10px; border-radius: 8px; font-size: 13px; width: 100%;
-            transition: 0.2s; height: 32px;
+            transition: 0.2s; height: 36px;
         }
         input:focus, select:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15); }
         
-        input[type="color"] { padding: 0; width: 32px; min-width: 32px; cursor: pointer; border: 3px solid #fff; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 50%; }
-        input[type="range"] { -webkit-appearance: none; height: 4px; background: rgba(0,0,0,0.05); padding: 0; border: none; border-radius: 3px; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: var(--primary); border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.1s; }
-        
+        input[type="color"] { padding: 0; width: 36px; min-width: 36px; cursor: pointer; border: 3px solid #fff; overflow: hidden; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input[type="range"] { -webkit-appearance: none; height: 6px; background: rgba(0,0,0,0.05); padding: 0; border: none; border-radius: 3px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: var(--primary); border-radius: 50%; cursor: pointer; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.1s; }
+
         button {
             background: rgba(255,255,255,0.6); border: 1px solid rgba(0,0,0,0.05); color: #636e72;
             padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: 600;
             transition: 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 6px; justify-content: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
         button:hover { border-color: var(--primary); color: var(--primary); background: #fff; transform: translateY(-1px); }
+        
         button.primary {
             background: var(--primary-grad); border: none; color: white !important; width: 100%; padding: 12px;
             box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3); font-size: 14px;
         }
+        button.primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(108, 92, 231, 0.4); }
         button.icon-only { width: 36px; padding: 0; font-size: 16px; }
         button.danger { color: #e74c3c; border-color: #fab1a0; background: #fff5f5; }
 
         .palette { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;}
         .dot { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 3px solid #fff; box-shadow: 0 3px 6px rgba(0,0,0,0.1); transition: 0.2s; }
         .dot:hover { transform: scale(1.15); z-index: 2; }
-
-        /* 视口 */
-        .viewport {
-            flex: 1; position: relative; overflow: hidden;
-            background: transparent;
-            background-image: radial-gradient(rgba(108, 92, 231, 0.1) 1.5px, transparent 1.5px);
-            background-size: 24px 24px;
-            cursor: grab;
-        }
-        .viewport:active { cursor: grabbing; }
-        
-        /* 画布 */
-        canvas { 
-            display: block; background: #fff; border-radius: 4px; 
-            box-shadow: 0 30px 80px -10px rgba(50, 50, 93, 0.15), 0 18px 36px -18px rgba(0, 0, 0, 0.1);
-            /* 关键修复：确保Canvas有初始大小 */
-            width: 100%; height: 100%; 
-        }
 
         .drop-overlay {
             position: fixed; inset: 0; background: rgba(255, 255, 255, 0.8);
@@ -116,35 +142,21 @@
             font-size: 32px; font-weight: 800; color: var(--primary); backdrop-filter: blur(10px);
         }
         
-        .empty-tip { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; pointer-events:none; opacity:0.6; color:#2d3436; width: 100%;}
+        .empty-tip { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; pointer-events:none; opacity:0.6; color:#2d3436; width:100%; }
         .loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 1000; display: none; flex-direction:column; justify-content: center; align-items: center; color:#2d3436; font-weight:bold;}
 
-        .top-actions {
-            position: absolute; top: 20px; right: 20px; z-index: 200;
-            display: flex; gap: 10px;
-            background: rgba(255, 255, 255, 0.7);
-            padding: 10px 15px; border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
-            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.6);
-            align-items: center;
-        }
-
+        /* Modal */
         .modal-mask {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
             z-index: 1000; display: none; justify-content: center; align-items: center;
         }
         .modal {
-            background: #fff; width: 400px; max-height: 80vh;
-            border-radius: 20px; padding: 24px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            display: flex; flex-direction: column; gap: 15px;
-            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: #fff; width: 400px; padding: 24px; border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: popIn 0.2s ease;
         }
-        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        .modal-head { font-size: 18px; font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { overflow-y: auto; max-height: 50vh; display: flex; flex-direction: column; gap: 10px; }
+        @keyframes popIn { from {transform:scale(0.95); opacity:0} to {transform:scale(1); opacity:1} }
+        .preset-list { max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 15px;}
         .preset-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 12px; border: 1px solid #eee; transition: 0.2s; }
         .preset-item:hover { background: #fff; border-color: var(--primary); box-shadow: 0 4px 12px rgba(108, 92, 231, 0.1); }
     </style>
@@ -152,39 +164,44 @@
 <body>
 
 <div class="drop-overlay" id="drop-overlay">📂 松开鼠标添加图片</div>
+<div class="loader" id="loader">Processing...</div>
 
 <!-- 右上角：导出 -->
 <div class="top-actions">
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
         <span style="font-size:10px; color:#b2bec3; font-weight:bold;">EXPORT</span>
-        <div style="display:flex; gap:4px; font-size:12px;">
+        <div style="display:flex; gap:5px; align-items:center;">
             <input type="number" id="dl-start" value="1" title="起始号" oninput="app.render()" style="width:36px; height:20px; padding:0; text-align:center; border:none; background:transparent;">
             <span style="color:#d1d5db; font-size:12px;">-</span>
             <input type="number" id="dl-count" value="5" title="数量" style="width:36px; height:20px; padding:0; text-align:center; border:none; background:transparent;">
         </div>
     </div>
-    <div style="width:1px; height:24px; background:rgba(0,0,0,0.06);"></div>
-    <select id="dl-type" style="width:110px; background:transparent; border:none; font-weight:600; color:#4b5563;">
+    <div style="width:1px; height:24px; background:rgba(0,0,0,0.1);"></div>
+    <select id="dl-type" style="width:110px; background:transparent; border:none; font-weight:600; color:#636e72;">
         <option value="single">逐张下载</option>
         <option value="zip">打包 ZIP</option>
     </select>
-    <button class="primary" onclick="app.download()" style="width:auto; padding: 10px 24px;">
-        导出文件
-    </button>
+    <button class="primary" onclick="app.download()">导出文件</button>
 </div>
 
 <!-- 弹窗 -->
 <div class="modal-mask" id="save-modal">
     <div class="modal">
-        <div class="modal-head">保存预设 <span onclick="app.closeModal('save')" style="cursor:pointer; color:#aaa;">×</span></div>
-        <input type="text" id="preset-name-input" placeholder="输入预设名称" style="height:44px;">
-        <button class="primary" onclick="app.confirmSave()">确认保存</button>
+        <h3 style="margin:0 0 15px 0;">保存预设</h3>
+        <input type="text" id="preset-name-input" placeholder="输入预设名称" style="height:44px; margin-bottom:15px;">
+        <div style="display:flex; gap:10px;">
+            <button onclick="app.closeModal('save')" style="flex:1">取消</button>
+            <button class="primary" onclick="app.confirmSave()" style="flex:1">确认保存</button>
+        </div>
     </div>
 </div>
 <div class="modal-mask" id="load-modal">
     <div class="modal">
-        <div class="modal-head">读取预设 <span onclick="app.closeModal('load')" style="cursor:pointer; color:#aaa;">×</span></div>
-        <div class="modal-body" id="preset-list"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0;">读取预设</h3>
+            <span onclick="app.closeModal('load')" style="cursor:pointer; font-size:20px;">×</span>
+        </div>
+        <div class="preset-list" id="preset-list"></div>
     </div>
 </div>
 
@@ -204,16 +221,12 @@
             <label style="font-size:11px; font-weight:700; color:#b2bec3;">QUICK ACTIONS</label>
             <button onclick="app.openLoad()" style="padding:6px 12px; font-size:11px; background:rgba(108,92,231,0.08); color:var(--primary); border:none;">📂 读取预设</button>
         </div>
-        
-        <div style="font-size:11px; color:#999; background:rgba(0,0,0,0.03); padding:8px; border-radius:8px; line-height:1.4;">
-            ℹ️ <b>说明：</b> 预设仅保存排版和文字，不保存背景图片。
-        </div>
 
         <!-- 1. 全局 -->
         <div class="card" id="p-global">
             <div class="card-title">
                 <span>画布 & 底色</span>
-                <select id="ratio-preset" onchange="app.applyRatio(this.value)" style="width:90px; height:24px; padding:0 4px; border:none; background:transparent; text-align:right;">
+                <select id="ratio-preset" onchange="app.applyRatio(this.value)" style="width:90px; height:24px; padding:0; border:none; background:transparent; text-align:right;">
                     <option value="custom">自定义</option>
                     <option value="750,1000">3:4 小红书</option>
                     <option value="720,1280">9:16 抖音</option>
@@ -277,8 +290,7 @@
                         <option value="'Bangers'">Bangers 漫画</option>
                         <option value="'Righteous'">Righteous 科幻</option>
                         <option value="'Lobster'">Lobster 艺术</option>
-                        <option value="'Alfa Slab One'">Alfa (超粗)</option>
-                        <option value="'Russo One'">Russo 硬朗</option>
+                        <option value="'Alfa Slab One'">Alfa 超粗</option>
                     </optgroup>
                 </select>
             </div>
@@ -286,7 +298,7 @@
             <div class="row"><label>粗细</label><input type="range" min="100" max="900" id="t-w" onmousedown="app.pushHistory()" oninput="app.updateSel('w',this.value)"></div>
             <div class="row">
                 <label>颜色</label><input type="color" id="t-c" onchange="app.pushHistory()" oninput="app.updateSel('c',this.value)">
-                <label style="margin-left:auto; width:auto;">字距</label><input type="range" min="-10" max="50" id="t-sp" onmousedown="app.pushHistory()" oninput="app.updateSel('sp',this.value)">
+                <label style="margin-left:auto;">字距</label><input type="range" min="-10" max="50" id="t-sp" onmousedown="app.pushHistory()" oninput="app.updateSel('sp',this.value)">
             </div>
             <div class="row">
                 <label>阴影</label><input type="color" id="t-sc" onchange="app.pushHistory()" oninput="app.updateSel('sc',this.value)">
@@ -310,6 +322,7 @@
                 <select id="n-font" onchange="app.pushHistory(); app.updateSel('font',this.value)">
                     <option value="'Ma Shan Zheng'">江湖体 (默认)</option>
                     <option value="'Arial'">系统数字</option>
+                    <option value="'ZCOOL QingKe HuangYou'">站酷黄油</option>
                 </select>
             </div>
             <div class="row"><label>字号</label><input type="range" min="20" max="250" id="n-s" onmousedown="app.pushHistory()" oninput="app.updateSel('s',this.value)"></div>
@@ -331,11 +344,6 @@
     </div>
 </div>
 
-<div class="loader" id="loader">
-    <div style="font-size:24px; font-weight:800; margin-bottom:10px;">Rendering...</div>
-    <div style="opacity:0.7">正在生成高清图片</div>
-</div>
-
 <script>
 const DEF_LOGO_URL = "https://pic1.imgdb.cn/item/69367cdf2a4ee13cb9508e34.png";
 
@@ -348,214 +356,104 @@ function invertColor(hex) {
     const r = parseInt(hex.substr(1,2),16), g = parseInt(hex.substr(3,2),16), b = parseInt(hex.substr(5,2),16);
     return (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000000' : '#ffffff';
 }
+const rgbToHex = (r,g,b) => "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
 
 const app = {
-    view: { x: 0, y: 0, zoom: 0.65 },
-    board: { w: 750, h: 1000 },
+    view: { x:0, y:0, zoom:0.65 },
+    board: { w:750, h:1000 },
     items: [],
     history: [], ptr: -1,
-    sel: null, mode: null, lastP: {x:0, y:0}, initV: {},
+    sel: null, mode: null, lastP: {x:0,y:0}, initV: {},
     cvs: document.getElementById('cvs'),
     ctx: document.getElementById('cvs').getContext('2d'),
 
     init() {
-        this.resizeViewport();
-        window.addEventListener('resize', () => this.resizeViewport());
-        
-        // 键盘监听
-        window.addEventListener('keydown', e => { 
-            const active = document.activeElement;
-            const isInput = active.tagName === 'INPUT' || active.tagName === 'SELECT' || active.tagName === 'TEXTAREA';
-            
-            if(e.code==='Space' && !isInput) document.getElementById('viewport').style.cursor='grab'; 
-            if((e.code==='Backspace' || e.code==='Delete') && !isInput) this.deleteSelection();
-            if((e.ctrlKey||e.metaKey) && e.key==='z' && !isInput) { e.preventDefault(); this.undo(); }
-            if((e.ctrlKey||e.metaKey) && e.key==='y' && !isInput) { e.preventDefault(); this.redo(); }
+        window.addEventListener('resize', ()=>this.resizeView());
+        window.addEventListener('keydown', e=>{
+            const tag = document.activeElement.tagName;
+            if(tag!=='INPUT' && tag!=='SELECT') {
+                if(e.code==='Space') document.getElementById('viewport').style.cursor='grab';
+                if(e.key==='Backspace'||e.key==='Delete') this.del();
+                if((e.ctrlKey||e.metaKey)&&e.key==='z') { e.preventDefault(); this.undo(); }
+                if((e.ctrlKey||e.metaKey)&&e.key==='y') { e.preventDefault(); this.redo(); }
+            }
         });
-        window.addEventListener('keyup', e => { document.getElementById('viewport').style.cursor='default'; });
+        window.addEventListener('keyup', ()=>document.getElementById('viewport').style.cursor='default');
+        
+        const overlay = document.getElementById('drop-overlay');
+        let dc=0;
+        document.addEventListener('dragenter', e=>{e.preventDefault(); dc++; overlay.style.display='flex'});
+        document.addEventListener('dragleave', e=>{e.preventDefault(); dc--; if(dc===0) overlay.style.display='none'});
+        document.addEventListener('dragover', e=>e.preventDefault());
+        document.addEventListener('drop', e=>{e.preventDefault(); dc=0; overlay.style.display='none'; this.handleDrop(e)});
 
-        this.reset();
-        this.bindEvents();
-        // 关键修复：延迟渲染以确保 DOM 就绪
+        this.resizeView();
+        // 关键：延迟初始化
         setTimeout(() => {
-             this.centerView();
-             this.render();
+            this.reset();
+            this.bindEvents();
         }, 100);
     },
 
     pushHistory() {
-        if(this.ptr < this.history.length - 1) {
-            this.history = this.history.slice(0, this.ptr + 1);
-        }
-        const state = JSON.stringify({
+        if(this.ptr < this.history.length-1) this.history = this.history.slice(0, this.ptr+1);
+        const st = JSON.stringify({ 
             items: this.items.map(x=>{const c={...x}; delete c.img; delete c._box; return c;}),
             board: this.board,
-            bar: {
-                h: document.getElementById('barH').value,
-                f: document.getElementById('barF').value,
-                c: document.getElementById('barC').value
-            }
+            bar: { h:document.getElementById('barH').value, f:document.getElementById('barF').value, c:document.getElementById('barC').value }
         });
-        if(this.history.length > 0 && this.history[this.history.length-1] === state) return;
-        this.history.push(state);
-        this.ptr++;
-        if(this.history.length > 30) { this.history.shift(); this.ptr--; }
+        if(this.history.length && this.history[this.history.length-1]===st) return;
+        this.history.push(st); this.ptr++;
     },
-
-    undo() { if(this.ptr > 0) { this.ptr--; this.restoreState(this.history[this.ptr]); } },
-    redo() { if(this.ptr < this.history.length - 1) { this.ptr++; this.restoreState(this.history[this.ptr]); } },
-
-    restoreState(json) {
+    undo() { if(this.ptr>0) { this.ptr--; this.restore(this.history[this.ptr]); } },
+    redo() { if(this.ptr<this.history.length-1) { this.ptr++; this.restore(this.history[this.ptr]); } },
+    
+    restore(json) {
         try {
-            const data = JSON.parse(json);
-            this.board = data.board;
-            document.getElementById('cw').value = this.board.w;
-            document.getElementById('ch').value = this.board.h;
-            document.getElementById('barH').value = data.bar.h;
-            document.getElementById('barF').value = data.bar.f || 0;
-            document.getElementById('barC').value = data.bar.c;
-
-            const currentImgs = {};
-            this.items.forEach(i => { if(i.img) currentImgs[i.id || i.z] = i.img; });
-
-            this.items = data.items.map(o => {
-                if(o.type==='img' || o.id==='logo') {
-                    if(currentImgs[o.id || o.z]) o.img = currentImgs[o.id || o.z];
-                    else if(o.isLogo) { 
-                        const i=new Image(); i.crossOrigin="Anonymous"; i.src=DEF_LOGO_URL; i.onload=()=>this.render(); o.img=i; 
-                    }
+            const d = JSON.parse(json);
+            this.board = d.board;
+            ['cw','ch'].forEach(k => document.getElementById(k).value = this.board[k==='cw'?'w':'h']);
+            ['barH','barF','barC'].forEach(k => document.getElementById(k).value = d.bar[k.replace('bar','').toLowerCase()] || (k==='barC'?'#fff':0));
+            
+            const cache = {}; this.items.forEach(i=>{if(i.img) cache[i.id||i.z] = i.img;});
+            this.items = d.items.map(o => {
+                if(o.type==='img'||o.id==='logo') {
+                    if(cache[o.id||o.z]) o.img = cache[o.id||o.z];
+                    else if(o.isLogo) { const i=new Image(); i.crossOrigin="Anonymous"; i.src=DEF_LOGO_URL; i.onload=()=>this.render(); o.img=i; }
                 }
                 return o;
             });
-            this.sel = null; 
-            this.syncUI();
-            this.render();
-        } catch(e) { console.error(e); }
+            this.sel = null; this.syncUI(); this.render();
+        } catch(e) {}
     },
 
-    reset(force) {
-        if(force && !confirm("确定重置？")) return;
+    reset(f) {
+        if(f && !confirm("确定重置？")) return;
+        this.board = {w:750, h:1000};
+        ['cw','ch'].forEach(k=>document.getElementById(k).value = k==='cw'?750:1000);
+        document.getElementById('barH').value=220; document.getElementById('barF').value=0; document.getElementById('barC').value='#ffffff';
         
-        this.board = { w: 750, h: 1000 };
-        document.getElementById('cw').value = 750;
-        document.getElementById('ch').value = 1000;
-        document.getElementById('barH').value = 220;
-        document.getElementById('barC').value = "#ffffff";
-        document.getElementById('barF').value = 0;
-
         this.items = [
-            { type:'img', id:'logo', isLogo:true, x:650, y:800, w:200, h:80, s:1, r:0, z:200 },
-            { type:'txt', id:'title', val:'赤影 · 折叠小刀', x:375, y:880, font:"'Ma Shan Zheng'", s:80, w:400, sp:0, c:'#000000', sc:'#000000', sb:0, r:0, z:201 },
+            { type:'img', id:'logo', isLogo:true, x:620, y:780, w:200, h:80, s:1, r:0, z:200 },
+            { type:'txt', id:'title', val:'赤影 · 折叠小刀', x:375, y:900, font:"'Ma Shan Zheng'", s:80, w:400, sp:0, c:'#000000', sc:'#000000', sb:0, r:0, z:201 },
             { type:'num', id:'num', val:1, x:690, y:950, font:"'Ma Shan Zheng'", st:'plain', s:80, w:400, c:'#000000', sc:'#000000', sb:0, r:0, z:202 }
         ];
-
-        const img = new Image();
-        img.crossOrigin = "Anonymous"; 
-        img.onload = () => { 
-            const l = this.items.find(x=>x.id==='logo'); 
-            l.img = img; l.w = img.width; l.h = img.height; l.s = 200/img.width; 
-            this.render(); 
-            this.pushHistory();
-        };
-        img.src = DEF_LOGO_URL;
-
-        this.history = []; this.ptr = -1;
-        this.centerView();
-        this.syncUI();
+        
+        const i = new Image(); i.crossOrigin="Anonymous"; 
+        i.onload = ()=>{ 
+            const l=this.items.find(x=>x.id==='logo'); l.img=i; l.w=i.width; l.h=i.height; l.s=200/i.width; 
+            this.render(); this.pushHistory();
+        }; 
+        i.src=DEF_LOGO_URL;
+        
+        this.history=[]; this.ptr=-1; this.centerView(); this.syncUI(null);
     },
-
-    addText() {
-        this.pushHistory();
-        this.items.push({
-            type: 'txt',
-            val: '输入文字',
-            x: this.board.w / 2,
-            y: this.board.h / 2,
-            font: "'Ma Shan Zheng'",
-            s: 80, w: 400, sp: 0, c: '#000000', sc: '#000000', sb: 0, r: 0, z: 300
-        });
-        this.sel = this.items[this.items.length-1];
-        this.syncUI(this.sel);
-        this.highlightPanel('txt');
-        this.render();
-    },
-
-    resizeViewport() {
-        this.cvs.width = document.getElementById('viewport').clientWidth;
-        this.cvs.height = document.getElementById('viewport').clientHeight;
-        this.render();
-    },
-    
-    resizeBoard() {
-        this.board.w = parseInt(document.getElementById('cw').value);
-        this.board.h = parseInt(document.getElementById('ch').value);
-        this.render();
-    },
-
-    applyRatio(val) {
-        if(val === 'custom') return;
-        const [w, h] = val.split(',');
-        document.getElementById('cw').value = w;
-        document.getElementById('ch').value = h;
-        this.pushHistory();
-        this.resizeBoard();
-        this.centerView();
-    },
-
-    centerView() {
-        this.view.x = this.cvs.width/2;
-        this.view.y = this.cvs.height/2;
-        this.view.zoom = Math.min((this.cvs.width-100)/this.board.w, (this.cvs.height-100)/this.board.h);
-        this.render();
-    },
-
-    deleteSelection() {
-        if(this.sel) {
-            this.pushHistory();
-            this.items = this.items.filter(i => i !== this.sel);
-            this.sel = null;
-            this.render();
-        }
-    },
-
-    // --- 预设 ---
-    openSave() { document.getElementById('save-modal').style.display='flex'; },
-    closeModal(t) { document.getElementById(t+'-modal').style.display='none'; },
-    confirmSave() {
-        const n = document.getElementById('preset-name-input').value; if(!n) return alert("请输入名称");
-        const data = this.items.filter(x=>x.type!=='img'||x.isLogo).map(x=>{const c={...x}; delete c.img; delete c._box; return c;});
-        const st = {
-            w:this.board.w, h:this.board.h, 
-            bar: { h:document.getElementById('barH').value, f:document.getElementById('barF').value, c:document.getElementById('barC').value },
-            items:data
-        };
-        localStorage.setItem('PRE_'+n, JSON.stringify(st));
-        this.closeModal('save');
-        alert("保存成功");
-    },
-    openLoad() {
-        const l = document.getElementById('preset-list'); l.innerHTML = '';
-        Object.keys(localStorage).filter(k=>k.startsWith('PRE_')).forEach(k=>{
-            const n = k.replace('PRE_','');
-            l.innerHTML += `<div class="preset-item"><span class="preset-name">${n}</span><div class="preset-actions"><button onclick="app.loadP('${n}')">读取</button><button class="danger" onclick="app.delP('${n}')">×</button></div></div>`;
-        });
-        document.getElementById('load-modal').style.display='flex';
-    },
-    loadP(n) {
-        try {
-            const raw = localStorage.getItem('PRE_'+n);
-            if(!raw) throw new Error("Empty data");
-            this.restoreState(raw);
-            this.closeModal('load');
-            this.centerView();
-            this.pushHistory();
-        } catch(e) { alert("读取失败"); }
-    },
-    delP(n) { if(confirm('删除?')) { localStorage.removeItem('PRE_'+n); this.openLoad(); } },
 
     // --- Render ---
     render(exp=false, numOv=null) {
         const ctx = this.ctx;
+        if(!this.cvs.width) this.resizeView(); // 兜底
+        
         if(!exp) {
             ctx.resetTransform(); ctx.clearRect(0,0,this.cvs.width, this.cvs.height);
             ctx.translate(this.view.x, this.view.y); ctx.scale(this.view.zoom, this.view.zoom);
@@ -572,10 +470,8 @@ const app = {
 
         ctx.save(); ctx.beginPath(); ctx.rect(0,0,this.board.w,this.board.h); ctx.clip();
 
-        // 1. Images
         list.filter(x=>x.type==='img'&&!x.isLogo).forEach(o=>this.drawItem(ctx,o));
 
-        // 2. Bar
         const bH = parseInt(document.getElementById('barH').value), bF = parseInt(document.getElementById('barF').value), bC = document.getElementById('barC').value;
         if(bH>0) {
             if(bF>0) {
@@ -586,7 +482,6 @@ const app = {
             ctx.fillStyle=bC; ctx.fillRect(0, this.board.h-bH, this.board.w, bH);
         }
 
-        // 3. Top
         list.filter(x=>!(x.type==='img'&&!x.isLogo)).forEach(o=>{
             let v = null;
             if(o.type==='num') v = (exp && numOv!==null) ? numOv : document.getElementById('dl-start').value;
@@ -595,10 +490,10 @@ const app = {
         ctx.restore();
 
         if(!exp && this.mode==='drag' && this.sel) this.drawGuides(ctx, this.sel);
-        if(!exp && this.sel) this.drawSelection(ctx, this.sel);
+        if(!exp && this.sel) this.drawBox(ctx, this.sel);
     },
 
-    drawItem(ctx, o, override) {
+    drawItem(ctx, o, vOverride) {
         if(!o.w) o.w=100; if(!o.h) o.h=100;
         ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.r);
         if(o.sc && o.sb>0) { ctx.shadowColor=o.sc; ctx.shadowBlur=parseInt(o.sb); ctx.shadowOffsetX=2; ctx.shadowOffsetY=2; }
@@ -608,12 +503,10 @@ const app = {
             bw=o.w*o.s; bh=o.h*o.s; try{ctx.drawImage(o.img,-bw/2,-bh/2,bw,bh)}catch(e){}
         } else if(o.type==='txt') {
             ctx.fillStyle=o.c; const f=`${o.w} ${o.s}px ${o.font}`;
-            // 修复选中框紧贴文字
             const d=this.drawTxt(ctx, o.val, f, parseInt(o.sp)); bw=d.w; bh=o.s*1.2;
         } else if(o.type==='num') {
-            const v = String(override); ctx.fillStyle=o.c; ctx.font=`${o.w} ${o.s}px ${o.font}`;
+            const v = String(vOverride); ctx.fillStyle=o.c; ctx.font=`${o.w} ${o.s}px ${o.font}`;
             ctx.textAlign="center"; ctx.textBaseline="middle"; const m=ctx.measureText(v);
-            
             if(o.st==='plain') { ctx.fillText(v,0,0); bw=m.width; bh=o.s*1.1; }
             else if(o.st==='circle') {
                 const r=o.s*0.65; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.lineWidth=Math.max(2,o.s*0.05); ctx.strokeStyle=o.c; ctx.stroke();
@@ -637,13 +530,12 @@ const app = {
         return {w:tw};
     },
 
-    drawSelection(ctx, o) {
+    drawBox(ctx, o) {
         if(!o._box) return;
         ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.r);
         const w=o._box.w+10, h=o._box.h+10;
-        ctx.strokeStyle="#6c5ce7"; ctx.lineWidth=1.5; ctx.setLineDash([5,3]); ctx.strokeRect(-w/2,-h/2,w,h);
-        ctx.setLineDash([]); ctx.fillStyle="#fff"; ctx.strokeStyle="#6c5ce7"; ctx.lineWidth=2;
-        [[-w/2,-h/2],[w/2,-h/2],[-w/2,h/2],[w/2,h/2]].forEach(p=>{
+        ctx.strokeStyle="#6c5ce7"; ctx.lineWidth=1.5; ctx.strokeRect(-w/2,-h/2,w,h);
+        ctx.fillStyle="#fff"; [[-w/2,-h/2],[w/2,-h/2],[-w/2,h/2],[w/2,h/2]].forEach(p=>{
             ctx.beginPath(); ctx.arc(p[0],p[1],5,0,Math.PI*2); ctx.fill(); ctx.stroke();
         });
         ctx.beginPath(); ctx.moveTo(0,h/2); ctx.lineTo(0,h/2+25); ctx.stroke();
@@ -717,6 +609,23 @@ const app = {
         v.addEventListener('wheel', e=>{ e.preventDefault(); this.view.zoom*=e.deltaY>0?0.9:1.1; this.render(); }, {passive:false});
     },
 
+    // --- Helpers ---
+    resizeView() {
+        this.cvs.width=document.getElementById('viewport').clientWidth;
+        this.cvs.height=document.getElementById('viewport').clientHeight;
+        this.render();
+    },
+    resizeBoard() { this.board.w=parseInt(document.getElementById('cw').value); this.board.h=parseInt(document.getElementById('ch').value); this.render(); },
+    applyRatio(v) { if(v==='custom') return; const[w,h]=v.split(','); document.getElementById('cw').value=w; document.getElementById('ch').value=h; this.pushHistory(); this.resizeBoard(); this.centerView(); },
+    centerView() { this.view.x=this.cvs.width/2; this.view.y=this.cvs.height/2; this.view.zoom=Math.min((this.cvs.width-100)/this.board.w, (this.cvs.height-100)/this.board.h); this.render(); },
+    
+    addText() {
+        this.pushHistory();
+        this.items.push({type:'txt', val:'输入文字', x:this.board.w/2, y:this.board.h/2, font:"'Ma Shan Zheng'", s:80, w:400, sp:0, c:'#000', sc:'#000', sb:0, r:0, z:300});
+        this.sel=this.items[this.items.length-1]; this.highlight('txt'); this.syncUI(this.sel); this.render();
+    },
+    del() { if(this.sel) { this.pushHistory(); this.items=this.items.filter(i=>i!==this.sel); this.sel=null; this.render(); } },
+    
     updateSel(k, v) { 
         if(!this.sel) return; 
         if(k==='font') document.fonts.load(`30px ${v}`).then(()=>{this.sel[k]=v; this.render()});
@@ -761,6 +670,7 @@ const app = {
         if(this.sel) this.syncUI(this.sel); this.render();
     },
     rgbToHex(c) { const[r,g,b]=c.match(/\d+/g); return "#"+((1<<24)+(+r<<16)+(+g<<8)+(+b)).toString(16).slice(1); },
+    
     highlight(t) { document.querySelectorAll('.card').forEach(c=>c.classList.remove('active')); document.getElementById(t==='txt'?'p-txt':(t==='num'?'p-num':'p-global')).classList.add('active'); },
     syncUI(o) {
         if(!o) return; const pf = o.type==='txt'?'t':'n';
@@ -768,6 +678,48 @@ const app = {
         if(o.type==='num') document.getElementById('n-st').value=o.st;
         ['font','s','w','c','sc','sb'].forEach(k=>document.getElementById(`${pf}-${k}`).value=o[k]);
     },
+
+    // --- Preset ---
+    openSave() { document.getElementById('save-modal').style.display='flex'; },
+    closeModal(t) { document.getElementById(t+'-modal').style.display='none'; },
+    confirmSave() {
+        const n = document.getElementById('preset-name-input').value; if(!n) return alert("请输入名称");
+        const data = this.items.filter(x=>x.type!=='img'||x.isLogo).map(x=>{const c={...x}; delete c.img; delete c._box; return c;});
+        const st = {
+            w:this.board.w, h:this.board.h, 
+            bar: { h:document.getElementById('barH').value, f:document.getElementById('barF').value, c:document.getElementById('barC').value },
+            items:data
+        };
+        localStorage.setItem('PRE_'+n, JSON.stringify(st));
+        this.closeModal('save');
+        alert("预设保存成功！");
+    },
+    openLoad() {
+        const l = document.getElementById('preset-list'); l.innerHTML = '';
+        Object.keys(localStorage).filter(k=>k.startsWith('PRE_')).forEach(k=>{
+            const n = k.replace('PRE_','');
+            l.innerHTML += `<div class="preset-item"><span class="preset-name">${n}</span><div class="preset-actions"><button onclick="app.loadP('${n}')">读取</button><button class="danger" onclick="app.delP('${n}')">×</button></div></div>`;
+        });
+        document.getElementById('load-modal').style.display='flex';
+    },
+    loadP(n) {
+        try {
+            const raw = localStorage.getItem('PRE_'+n);
+            if(!raw) return alert("读取失败");
+            const d = JSON.parse(raw);
+            this.board=d.board; ['cw','ch'].forEach(k=>document.getElementById(k).value=this.board[k==='cw'?'w':'h']);
+            ['barH','barF','barC'].forEach(k => document.getElementById(k).value = d.bar[k.replace('bar','').toLowerCase()] || (k==='barC'?'#fff':0));
+            
+            this.items = d.items.map(o => {
+                if(o.type==='img'||o.id==='logo') {
+                    if(o.isLogo) { const i=new Image(); i.crossOrigin="Anonymous"; i.src=DEF_LOGO_URL; i.onload=()=>this.render(); o.img=i; }
+                }
+                return o;
+            });
+            this.sel=null; this.pushHistory(); this.closeModal('load'); this.centerView(); this.syncUI(null); this.render();
+        } catch(e) { alert("预设损坏"); }
+    },
+    delP(n) { if(confirm('删?')) { localStorage.removeItem('PRE_'+n); this.openLoad(); } },
 
     async download() {
         const name = prompt("文件名", "Cover") || "Cover";
